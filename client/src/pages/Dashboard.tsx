@@ -67,9 +67,17 @@ export default function Dashboard() {
           
           <div className="flex items-center gap-2 text-white/60 text-sm relative z-10">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            Live Updates Enabled
+            লাইভ আপডেট সক্রিয়
           </div>
         </motion.div>
+
+        {/* Global Notice */}
+        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-4 text-yellow-500">
+          <p className="text-sm font-bold mb-1">গুরুত্বপূর্ণ নোটিশ:</p>
+          <p className="text-xs leading-relaxed">
+            সবাইকে জানানো যাচ্ছে যে, একটি প্রাইভেট কি শুধুমাত্র একবারই সাবমিট করা যাবে। একই কি বারবার সাবমিট করলে আপনার অ্যাকাউন্টটি ব্লক করে দেওয়া হতে পারে।
+          </p>
+        </div>
 
         {/* Actions */}
         <KeySubmitter />
