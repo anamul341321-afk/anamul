@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useWithdraw } from "@/hooks/use-wallet";
 import { Wallet, Loader2, CreditCard } from "lucide-react";
@@ -37,7 +38,7 @@ export function WithdrawForm({ balance }: { balance: number }) {
         <div className="p-2 bg-accent/20 rounded-lg">
           <Wallet className="w-6 h-6 text-accent" />
         </div>
-        <h2 className="text-xl font-bold">Withdraw Funds</h2>
+        <h2 className="text-xl font-bold text-white">টাকা উত্তোলন (Withdraw)</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -67,7 +68,7 @@ export function WithdrawForm({ balance }: { balance: number }) {
         </div>
 
         <div>
-          <label className="block text-sm text-muted-foreground mb-2">Account Number</label>
+          <label className="block text-sm text-muted-foreground mb-2">একাউন্ট নাম্বার</label>
           <input
             type="tel"
             value={number}
@@ -80,7 +81,7 @@ export function WithdrawForm({ balance }: { balance: number }) {
 
         <div>
           <label className="block text-sm text-muted-foreground mb-2">
-            Amount (Min. 50 BDT)
+            পরিমাণ (কমপক্ষে ৫০ টাকা)
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">৳</span>
@@ -105,13 +106,15 @@ export function WithdrawForm({ balance }: { balance: number }) {
           {isPending ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <>
-              উইথড্র রিকোয়েস্ট পাঠান <CreditCard className="w-5 h-5" />
-            </>
+            <div className="flex items-center justify-center gap-2">
+              <span>উইথড্র রিকোয়েস্ট পাঠান</span>
+              <CreditCard className="w-5 h-5" />
+            </div>
           )}
         </button>
+        
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mt-4">
-          <p className="text-xs text-emerald-500 leading-relaxed text-center">
+          <p className="text-xs text-emerald-500 leading-relaxed text-center font-medium">
             পেমেন্ট পেতে ২৪ ঘণ্টা সময় লাগতে পারে। ধৈর্য ধরে অপেক্ষা করুন।
           </p>
         </div>

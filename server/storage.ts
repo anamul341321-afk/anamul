@@ -1,7 +1,7 @@
 
 import { db } from "./db";
 import { users, transactions, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -10,6 +10,7 @@ export interface IStorage {
   updateUserBalance(userId: number, amount: number): Promise<User>;
   
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
+  updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
 }
 
@@ -44,6 +45,14 @@ export class DatabaseStorage implements IStorage {
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTransaction] = await db.insert(transactions).values(transaction).returning();
     return newTransaction;
+  }
+
+  async updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined> {
+    const [updated] = await db.update(transactions)
+      .set({ status })
+      .where(eq(transactions.id, id))
+      .returning();
+    return updated;
   }
 
   async getUserTransactions(userId: number): Promise<Transaction[]> {

