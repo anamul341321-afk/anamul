@@ -38,7 +38,7 @@ export default function Dashboard() {
               <User className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Welcome back,</p>
+              <p className="text-xs text-muted-foreground">স্বাগতম,</p>
               <p className="font-bold text-sm truncate max-w-[120px]">{user.guestId}</p>
             </div>
           </div>

@@ -42,7 +42,7 @@ export default function Login() {
             Secure Earn
           </h1>
           <p className="text-muted-foreground text-lg">
-            Enter your Guest ID to access your wallet
+            আপনার নাম লিখে প্রবেশ করুন
           </p>
         </div>
 
@@ -50,13 +50,13 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-2 ml-1">
-                Guest ID
+                আপনার নাম
               </label>
               <input
                 type="text"
                 value={guestId}
                 onChange={(e) => setGuestId(e.target.value)}
-                placeholder="Enter your ID..."
+                placeholder="এখানে আপনার নাম লিখুন..."
                 className="input-field text-lg py-4"
                 autoFocus
               />
@@ -71,7 +71,7 @@ export default function Login() {
                 <Loader2 className="w-6 h-6 animate-spin" />
               ) : (
                 <>
-                  Continue <ArrowRight className="w-6 h-6" />
+                  এগিয়ে যান <ArrowRight className="w-6 h-6" />
                 </>
               )}
             </button>
