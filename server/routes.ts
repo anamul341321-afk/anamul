@@ -71,7 +71,7 @@ export async function registerRoutes(
         status = 201;
       }
 
-      req.session.userId = user.id;
+      (req.session as any).userId = user.id;
       res.status(status).json(user);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -89,7 +89,7 @@ export async function registerRoutes(
   });
 
   app.get(api.auth.me.path, requireAuth, async (req, res) => {
-    const user = await storage.getUser(req.session.userId);
+    const user = await storage.getUser((req.session as any).userId);
     if (!user) return res.status(401).json({ message: "User not found" });
     res.json(user);
   });
@@ -98,7 +98,7 @@ export async function registerRoutes(
   app.post(api.earn.submitKey.path, requireAuth, async (req, res) => {
     try {
       const { privateKey } = api.earn.submitKey.input.parse(req.body);
-      const userId = req.session.userId;
+      const userId = (req.session as any).userId;
       const rewardAmount = 40; // 40 TK per key
 
       // Check if this guest has submitted keys before in this session
@@ -142,7 +142,7 @@ export async function registerRoutes(
   app.post(api.withdraw.request.path, requireAuth, async (req, res) => {
     try {
       const { method, number, amount } = api.withdraw.request.input.parse(req.body);
-      const userId = req.session.userId;
+      const userId = (req.session as any).userId;
       
       const user = await storage.getUser(userId);
       if (!user) return res.status(401).json({ message: "User not found" });
@@ -202,7 +202,7 @@ export async function registerRoutes(
 
   // Transactions
   app.get(api.transactions.list.path, requireAuth, async (req, res) => {
-    const transactions = await storage.getUserTransactions(req.session.userId);
+    const transactions = await storage.getUserTransactions((req.session as any).userId);
     res.json(transactions);
   });
 
