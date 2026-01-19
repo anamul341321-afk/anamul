@@ -106,10 +106,15 @@ export function WithdrawForm({ balance }: { balance: number }) {
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <>
-              Request Withdrawal <CreditCard className="w-5 h-5" />
+              উইথড্র রিকোয়েস্ট পাঠান <CreditCard className="w-5 h-5" />
             </>
           )}
         </button>
+        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mt-4">
+          <p className="text-xs text-emerald-500 leading-relaxed text-center">
+            পেমেন্ট পেতে ২৪ ঘণ্টা সময় লাগতে পারে। ধৈর্য ধরে অপেক্ষা করুন।
+          </p>
+        </div>
       </form>
     </motion.div>
   );
