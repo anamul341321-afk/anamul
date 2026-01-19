@@ -1,18 +1,46 @@
-import { sql } from "drizzle-orm";
-import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// === TABLE DEFINITIONS ===
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  id: serial("id").primaryKey(),
+  guestId: text("guest_id").notNull().unique(),
+  balance: integer("balance").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // 'earning' or 'withdrawal'
+  amount: integer("amount").notNull(),
+  details: text("details"), // private key or withdrawal number/method
+  status: text("status").default("completed"), // completed, pending
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// === SCHEMAS ===
 export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+  guestId: true,
 });
 
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export const insertTransactionSchema = createInsertSchema(transactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+// === TYPES ===
 export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+
+// === API CONTRACT TYPES ===
+export type LoginRequest = { guestId: string };
+export type SubmitKeyRequest = { privateKey: string };
+export type WithdrawRequest = { method: "bkash" | "nagad"; number: string; amount: number };
+
+export type UserResponse = User;
+export type TransactionResponse = Transaction;
