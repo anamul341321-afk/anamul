@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { KeySubmitter } from "@/components/KeySubmitter";
 import { WithdrawForm } from "@/components/WithdrawForm";
 import { TransactionList } from "@/components/TransactionList";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, MessageCircle, Send } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 
@@ -88,6 +88,44 @@ export default function Dashboard() {
           <h3 className="text-lg font-bold mb-4 px-2">Recent History</h3>
           <TransactionList />
         </div>
+
+        {/* Support Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="bg-emerald-500/10 border border-emerald-500/20 rounded-3xl p-6 mt-8"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-emerald-500/20 rounded-lg">
+              <MessageCircle className="w-6 h-6 text-emerald-400" />
+            </div>
+            <h2 className="text-xl font-bold text-white">সাপোর্ট এবং আপডেট</h2>
+          </div>
+          
+          <p className="text-sm text-emerald-100/80 mb-6 leading-relaxed">
+            আমাদের অ্যাপের সকল নতুন আপডেট এবং পেমেন্ট প্রুফ সবার আগে জানতে টেলিগ্রাম চ্যানেলে জয়েন করুন। এছাড়া কোনো সমস্যা হলে আমাদের সাপোর্ট গ্রুপে মেসেজ দিন।
+          </p>
+
+          <div className="space-y-3">
+            <a 
+              href="https://t.me/anamul963050" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-[#24A1DE] hover:bg-[#24A1DE]/90 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              <Send className="w-5 h-5" /> চ্যানেলে জয়েন করুন
+            </a>
+            <a 
+              href="https://t.me/+6a3iUf1_GAhiMWY1" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl transition-all"
+            >
+              <MessageCircle className="w-5 h-5" /> সাপোর্ট গ্রুপে মেসেজ দিন
+            </a>
+          </div>
+        </motion.div>
       </main>
     </div>
   );

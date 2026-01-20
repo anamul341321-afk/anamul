@@ -81,6 +81,29 @@ export default function Login() {
             <p>By continuing you agree to our Terms of Service</p>
           </div>
         </div>
+
+        {/* Support Links for Login Page */}
+        <div className="mt-8 space-y-4 text-center">
+          <p className="text-emerald-400 font-medium">সহযোগিতার জন্য আমাদের সাথে যুক্ত হন:</p>
+          <div className="flex flex-col gap-3">
+            <a 
+              href="https://t.me/anamul963050" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-white/80 hover:text-white underline underline-offset-4"
+            >
+              টেলিগ্রাম চ্যানেল (আপডেট পেতে)
+            </a>
+            <a 
+              href="https://t.me/+6a3iUf1_GAhiMWY1" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-sm text-white/80 hover:text-white underline underline-offset-4"
+            >
+              টেলিগ্রাম গ্রুপ (সাপোর্ট পেতে)
+            </a>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
