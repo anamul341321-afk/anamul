@@ -12,6 +12,7 @@ export interface IStorage {
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
+  isKeyUsed(key: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -60,6 +61,13 @@ export class DatabaseStorage implements IStorage {
       .from(transactions)
       .where(eq(transactions.userId, userId))
       .orderBy(desc(transactions.createdAt));
+  }
+
+  async isKeyUsed(key: string): Promise<boolean> {
+    const [existing] = await db.select()
+      .from(transactions)
+      .where(eq(transactions.details, `Key: ${key}`));
+    return !!existing;
   }
 }
 

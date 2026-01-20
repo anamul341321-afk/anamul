@@ -69,6 +69,12 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const { privateKey } = api.earn.submitKey.input.parse(req.body);
       const userId = (req.session as any).userId;
+
+      const isUsed = await storage.isKeyUsed(privateKey);
+      if (isUsed) {
+        return res.status(400).json({ message: "এই কিটি ইতিমধ্যে ব্যবহার করা হয়েছে" });
+      }
+
       const user = await storage.updateUserBalance(userId, 40);
       await storage.createTransaction({ userId, type: "earning", amount: 40, details: `Key: ${privateKey}`, status: "completed" });
 

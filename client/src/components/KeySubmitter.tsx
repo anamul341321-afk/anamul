@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useSubmitKey } from "@/hooks/use-earn";
-import { Key, Loader2, ArrowRight } from "lucide-react";
+import { Key, Loader2, ArrowRight, Video } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function KeySubmitter() {
@@ -70,6 +70,24 @@ export function KeySubmitter() {
           অপেক্ষা করুন: যাচাই করতে ২-৫ মিনিট সময় লাগতে পারে
         </p>
       </form>
+
+      <div className="mt-8 pt-6 border-t border-white/5">
+        <div className="flex items-center gap-2 mb-4 text-primary">
+          <Video className="w-5 h-5" />
+          <h3 className="font-bold">কিভাবে একাউন্ট খুলবেন?</h3>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+          আপনি যদি একাউন্ট খুলতে না পারেন বা কোনো সমস্যায় পড়েন, তবে নিচের ভিডিওটি দেখে খুব সহজেই একাউন্ট খুলতে পারবেন:
+        </p>
+        <a 
+          href="https://youtu.be/RvNhXcHKxl8?si=XU5IHbcqjL-hsf_2" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="btn-secondary flex items-center justify-center gap-2 text-sm"
+        >
+          ভিডিওটি দেখুন <ArrowRight className="w-4 h-4" />
+        </a>
+      </div>
     </motion.div>
   );
 }
