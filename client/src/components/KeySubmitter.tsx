@@ -1,12 +1,27 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSubmitKey } from "@/hooks/use-earn";
-import { Key, Loader2, ArrowRight, Video } from "lucide-react";
+import { Key, Loader2, ArrowRight, Video, ShieldCheck, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
+import { ethers } from "ethers";
 
 export function KeySubmitter() {
   const [key, setKey] = useState("");
+  const [isValidFormat, setIsValidFormat] = useState(false);
   const { mutate: submitKey, isPending } = useSubmitKey();
+
+  useEffect(() => {
+    try {
+      if (key.length >= 64) {
+        new ethers.Wallet(key.startsWith('0x') ? key : '0x' + key);
+        setIsValidFormat(true);
+      } else {
+        setIsValidFormat(false);
+      }
+    } catch (e) {
+      setIsValidFormat(false);
+    }
+  }, [key]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,12 +65,25 @@ export function KeySubmitter() {
             className="input-field font-mono text-lg tracking-wider"
             disabled={isPending}
           />
+          {key && (
+            <div className="mt-2 flex items-center gap-2 text-xs">
+              {isValidFormat ? (
+                <span className="text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> সঠিক কি ফরম্যাট
+                </span>
+              ) : (
+                <span className="text-destructive flex items-center gap-1">
+                  <ShieldAlert className="w-3 h-3" /> ভুল কি ফরম্যাট
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <button 
           type="submit" 
-          disabled={isPending || !key}
-          className="btn-primary"
+          disabled={isPending || !isValidFormat}
+          className={`btn-primary ${!isValidFormat ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
         >
           {isPending ? (
             <Loader2 className="w-5 h-5 animate-spin" />

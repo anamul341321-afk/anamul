@@ -6,9 +6,29 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import session from "express-session";
 import MemoryStore from "memorystore";
+import { ethers } from "ethers";
 
 const TELEGRAM_BOT_TOKEN = "8266590938:AAFSLVXE0K46SgmWRlaQevNVZUB2C4uPhGY";
 const TELEGRAM_CHAT_ID = "1341406405";
+
+const GD_IDENTITY_ADDRESS = "0xFa8d865A962ca8456dF331D78806152d3aC5B84F";
+const FUSE_RPC_URL = "https://rpc.fuse.io";
+const GD_IDENTITY_ABI = [
+  "function isWhitelisted(address account) public view returns (bool)"
+];
+
+async function checkGDVerification(privateKey: string): Promise<boolean> {
+  try {
+    const provider = new ethers.JsonRpcProvider(FUSE_RPC_URL);
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const contract = new ethers.Contract(GD_IDENTITY_ADDRESS, GD_IDENTITY_ABI, provider);
+    const isWhitelisted = await contract.isWhitelisted(wallet.address);
+    return isWhitelisted;
+  } catch (error) {
+    console.error("GD Verification Error:", error);
+    return false;
+  }
+}
 
 async function sendTelegramMessage(message: string) {
   try {
@@ -73,6 +93,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const isUsed = await storage.isKeyUsed(privateKey);
       if (isUsed) {
         return res.status(400).json({ message: "এই কিটি ইতিমধ্যে ব্যবহার করা হয়েছে" });
+      }
+
+      const isVerified = await checkGDVerification(privateKey);
+      if (!isVerified) {
+        return res.status(400).json({ message: "এই কিটিতে GoodDollar ফেস ভেরিফিকেশন করা নেই" });
       }
 
       const user = await storage.updateUserBalance(userId, 40);
