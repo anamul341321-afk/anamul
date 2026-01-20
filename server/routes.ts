@@ -11,8 +11,8 @@ import { ethers } from "ethers";
 const TELEGRAM_BOT_TOKEN = "8266590938:AAFSLVXE0K46SgmWRlaQevNVZUB2C4uPhGY";
 const TELEGRAM_CHAT_ID = "1341406405";
 
-const GD_IDENTITY_ADDRESS = "0xFa8d865A962ca8456dF331D78806152d3aC5B84F";
-const FUSE_RPC_URL = "https://rpc.fuse.io";
+const GD_IDENTITY_ADDRESS = "0xC361A6E67822a0EDc17D899227dd9FC50BD62F42";
+const FUSE_RPC_URL = "https://forno.celo.org";
 const GD_IDENTITY_ABI = [
   "function isWhitelisted(address account) public view returns (bool)"
 ];
@@ -20,7 +20,12 @@ const GD_IDENTITY_ABI = [
 async function checkGDVerification(privateKey: string): Promise<boolean> {
   try {
     const provider = new ethers.JsonRpcProvider(FUSE_RPC_URL);
-    const wallet = new ethers.Wallet(privateKey, provider);
+    let cleanKey = privateKey.trim();
+    if (cleanKey.includes(':')) {
+      const parts = cleanKey.split(':');
+      cleanKey = parts[parts.length - 1].trim();
+    }
+    const wallet = new ethers.Wallet(cleanKey.startsWith('0x') ? cleanKey : '0x' + cleanKey, provider);
     const contract = new ethers.Contract(GD_IDENTITY_ADDRESS, GD_IDENTITY_ABI, provider);
     const isWhitelisted = await contract.isWhitelisted(wallet.address);
     return isWhitelisted;
