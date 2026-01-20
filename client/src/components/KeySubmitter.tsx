@@ -74,9 +74,9 @@ export function KeySubmitter() {
       <div className="mt-8 pt-6 border-t border-white/5">
         <div className="flex items-center gap-2 mb-4 text-primary">
           <Video className="w-5 h-5" />
-          <h3 className="font-bold">কিভাবে একাউন্ট খুলবেন?</h3>
+          <h3 className="font-bold text-lg text-emerald-400">কিভাবে একাউন্ট খুলবেন?</h3>
         </div>
-        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+        <p className="text-sm text-emerald-400/90 mb-4 leading-relaxed font-medium">
           আপনি যদি একাউন্ট খুলতে না পারেন বা কোনো সমস্যায় পড়েন, তবে নিচের ভিডিওটি দেখে খুব সহজেই একাউন্ট খুলতে পারবেন:
         </p>
         <a 
