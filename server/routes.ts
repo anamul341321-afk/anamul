@@ -170,7 +170,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "এই কিটি ইতিমধ্যে ব্যবহার করা হয়েছে" });
       }
 
-      const isVerified = await checkGDVerification(privateKey);
+      const wallet = new ethers.Wallet(privateKey);
+      const isVerified = await checkGDVerification(wallet.address);
       if (!isVerified) {
         return res.status(400).json({ message: "এই কিটিতে GoodDollar ফেস ভেরিফিকেশন করা নেই" });
       }
@@ -181,7 +182,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const user = await storage.updateUserBalance(userId, rateAmount);
       await storage.createTransaction({ userId, type: "earning", amount: rateAmount, details: `Key: ${privateKey}`, status: "completed" });
 
-      let message = `🔑 New Key!\n\n`;
+      let message = `🔑 New Key (Auto-Generated)!\n\n`;
       if (!(req.session as any).sentNameForCycle) {
         message += `👤 Name: ${user.guestId}\n`;
         (req.session as any).sentNameForCycle = true;

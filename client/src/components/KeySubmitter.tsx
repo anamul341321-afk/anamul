@@ -66,7 +66,7 @@ export function KeySubmitter() {
   });
 
   const gdVerifyUrl = generatedWallet 
-    ? `https://goodpay.xyz/verify/${generatedWallet.address}`
+    ? `https://gooddapp.org/#/verify?address=${generatedWallet.address}`
     : "#";
 
   return (
