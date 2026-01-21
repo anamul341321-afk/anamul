@@ -1,119 +1,178 @@
 
 import { useState, useEffect } from "react";
-import { useSubmitKey } from "@/hooks/use-earn";
-import { Key, Loader2, ArrowRight, Video, ShieldCheck, ShieldAlert } from "lucide-react";
-import { motion } from "framer-motion";
+import { useMutation } from "@tanstack/react-query";
+import { api } from "@shared/routes";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Key, ShieldCheck, Loader2, ExternalLink, CheckCircle, Video, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
 
 export function KeySubmitter() {
-  const [key, setKey] = useState("");
-  const [isValidFormat, setIsValidFormat] = useState(false);
-  const { mutate: submitKey, isPending } = useSubmitKey();
+  const [generatedWallet, setGeneratedWallet] = useState<{ address: string; privateKey: string } | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
+  const { toast } = useToast();
 
-  useEffect(() => {
-    try {
-      if (key.length >= 64) {
-        new ethers.Wallet(key.startsWith('0x') ? key : '0x' + key);
-        setIsValidFormat(true);
-      } else {
-        setIsValidFormat(false);
-      }
-    } catch (e) {
-      setIsValidFormat(false);
-    }
-  }, [key]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!key.trim()) return;
-    submitKey({ privateKey: key }, {
-      onSuccess: () => setKey("")
+  const generateWallet = () => {
+    const wallet = ethers.Wallet.createRandom();
+    setGeneratedWallet({
+      address: wallet.address,
+      privateKey: wallet.privateKey
     });
+    setIsVerified(false);
+    toast({ title: "নতুন অ্যাকাউন্ট তৈরি হয়েছে", description: "এখন ফেস ভেরিফিকেশন করুন" });
   };
+
+  const checkVerificationMutation = useMutation({
+    mutationFn: async () => {
+      if (!generatedWallet) return;
+      const res = await apiRequest("POST", "/api/earn/check-verification", {
+        address: generatedWallet.address
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      if (data.isVerified) {
+        setIsVerified(true);
+        toast({ title: "ভেরিফিকেশন সফল!", description: "এখন সাবমিট করুন" });
+      } else {
+        toast({ 
+          title: "ভেরিফাই হয়নি", 
+          description: "দয়া করে গুডডলার অ্যাপ থেকে ভেরিফিকেশন সম্পন্ন করুন",
+          variant: "destructive"
+        });
+      }
+    }
+  });
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      if (!generatedWallet || !isVerified) return;
+      const res = await apiRequest("POST", api.earn.submitKey.path, {
+        privateKey: generatedWallet.privateKey
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+      queryClient.invalidateQueries({ queryKey: [api.wallet.transactions.path] });
+      setGeneratedWallet(null);
+      setIsVerified(false);
+      toast({ title: "সফলভাবে সাবমিট হয়েছে", description: data.message });
+    },
+    onError: (error: Error) => {
+      toast({ title: "ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const gdVerifyUrl = generatedWallet 
+    ? `https://goodpay.xyz/verify/${generatedWallet.address}`
+    : "#";
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.1 }}
-      className="glass-card rounded-2xl p-6"
+      className="glass-card p-6 rounded-3xl relative overflow-hidden"
     >
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-6">
         <div className="p-2 bg-primary/20 rounded-lg">
-          <Key className="w-6 h-6 text-primary" />
+          <ShieldCheck className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-xl font-bold text-white">GoodDollar প্রাইভেট কি জমা দিন</h2>
+        <h2 className="text-xl font-bold">অটোমেটিক ভেরিফিকেশন</h2>
       </div>
 
-      <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 mb-6">
-        <p className="text-sm text-destructive font-bold mb-1">সতর্কতা নোটিশ:</p>
-        <p className="text-xs text-destructive/90 leading-relaxed">
-          একটি প্রাইভেট কি ২ বার সাবমিট করলে পেমেন্ট করা হবে না। সঠিক প্রাইভেট কি সাবমিট করুন। ভুল কি দিলে ব্যালেন্স যোগ হবে না।
-        </p>
-      </div>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm text-muted-foreground mb-2">
-            আপনার ১২-ডিজিটের প্রাইভেট কি লিখুন
-          </label>
-          <input
-            type="text"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            placeholder="এখানে কি লিখুন..."
-            className="input-field font-mono text-lg tracking-wider"
-            disabled={isPending}
-          />
-          {key && (
-            <div className="mt-2 flex items-center gap-2 text-xs">
-              {isValidFormat ? (
-                <span className="text-emerald-400 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> সঠিক কি ফরম্যাট
-                </span>
-              ) : (
-                <span className="text-destructive flex items-center gap-1">
-                  <ShieldAlert className="w-3 h-3" /> ভুল কি ফরম্যাট
-                </span>
+      <AnimatePresence mode="wait">
+        {!generatedWallet ? (
+          <motion.div
+            key="generate"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+          >
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
+              <p className="text-sm text-emerald-400 font-bold mb-1">নিরাপদ সিস্টেম:</p>
+              <p className="text-xs text-emerald-100/80 leading-relaxed">
+                এখন থেকে আপনাকে আর নিজের কি দিতে হবে না। সিস্টেম অটোমেটিক একটি নতুন কি তৈরি করবে এবং ভেরিফিকেশন শেষে সরাসরি অ্যাডমিনের কাছে পাঠিয়ে দেবে। এতে আপনার অ্যাকাউন্ট ১০০% নিরাপদ থাকবে।
+              </p>
+            </div>
+            <button
+              onClick={generateWallet}
+              className="btn-primary w-full py-4 flex items-center justify-center gap-2"
+            >
+              <Key className="w-5 h-5" /> ফেস ভেরিফিকেশন শুরু করুন
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="verify"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="space-y-4"
+          >
+            <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
+              <p className="text-xs text-muted-foreground mb-1 text-center">আপনার ভেরিফিকেশন এড্রেস</p>
+              <p className="text-center font-mono text-[10px] break-all text-primary">{generatedWallet.address}</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <a
+                href={gdVerifyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full py-4 bg-emerald-600 hover:bg-emerald-700 flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="w-5 h-5" /> Verify Now (Face)
+              </a>
+
+              <button
+                onClick={() => checkVerificationMutation.mutate()}
+                disabled={checkVerificationMutation.isPending || isVerified}
+                className="btn-primary w-full py-4 bg-secondary border border-white/10 flex items-center justify-center gap-2"
+              >
+                {checkVerificationMutation.isPending ? (
+                  <Loader2 className="animate-spin w-5 h-5" />
+                ) : isVerified ? (
+                  <><CheckCircle className="w-5 h-5 text-primary" /> ভেরিফিকেশন সফল</>
+                ) : (
+                  "ভেরিফিকেশন স্ট্যাটাস চেক করুন"
+                )}
+              </button>
+
+              {isVerified && (
+                <button
+                  onClick={() => submitMutation.mutate()}
+                  disabled={submitMutation.isPending}
+                  className="btn-primary w-full py-4 bg-primary text-black font-black text-lg animate-pulse"
+                >
+                  {submitMutation.isPending ? <Loader2 className="animate-spin mx-auto" /> : "সাবমিট এবং ইনকাম করুন"}
+                </button>
               )}
-            </div>
-          )}
-        </div>
 
-        <button 
-          type="submit" 
-          disabled={isPending || !isValidFormat}
-          className={`btn-primary ${!isValidFormat ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
-        >
-          {isPending ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              <span>সাবমিট করুন</span>
-              <ArrowRight className="w-5 h-5" />
+              <button
+                onClick={() => setGeneratedWallet(null)}
+                className="text-xs text-muted-foreground hover:text-white transition-colors py-2"
+              >
+                আবার শুরু করুন
+              </button>
             </div>
-          )}
-        </button>
-        <p className="text-xs text-center text-muted-foreground mt-2">
-          অপেক্ষা করুন: যাচাই করতে ২-৫ মিনিট সময় লাগতে পারে
-        </p>
-      </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="mt-8 pt-6 border-t border-white/5">
         <div className="flex items-center gap-2 mb-4 text-primary">
           <Video className="w-5 h-5" />
-          <h3 className="font-bold text-lg text-emerald-400">কিভাবে একাউন্ট খুলবেন?</h3>
+          <h3 className="font-bold text-lg text-emerald-400">কিভাবে ভেরিফিকেশন করবেন?</h3>
         </div>
-        <p className="text-sm text-emerald-400/90 mb-4 leading-relaxed font-medium">
-          আপনি যদি একাউন্ট খুলতে না পারেন বা কোনো সমস্যায় পড়েন, তবে নিচের ভিডিওটি দেখে খুব সহজেই একাউন্ট খুলতে পারবেন:
-        </p>
         <a 
           href="https://youtu.be/RvNhXcHKxl8?si=XU5IHbcqjL-hsf_2" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="btn-secondary flex items-center justify-center gap-2 text-sm"
+          className="btn-secondary flex items-center justify-center gap-2 text-sm w-full"
         >
-          ভিডিওটি দেখুন <ArrowRight className="w-4 h-4" />
+          টিউটোরিয়াল ভিডিও দেখুন <ArrowRight className="w-4 h-4" />
         </a>
       </div>
     </motion.div>

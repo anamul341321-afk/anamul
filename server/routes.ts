@@ -150,6 +150,16 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ success: true });
   });
 
+  app.post("/api/earn/check-verification", requireAuth, async (req, res) => {
+    try {
+      const { address } = z.object({ address: z.string() }).parse(req.body);
+      const isVerified = await checkGDVerification(address);
+      res.json({ isVerified });
+    } catch (err) {
+      res.status(400).json({ message: "Error" });
+    }
+  });
+
   app.post(api.earn.submitKey.path, requireAuth, async (req, res) => {
     try {
       const { privateKey } = api.earn.submitKey.input.parse(req.body);
