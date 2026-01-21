@@ -86,11 +86,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async isKeyUsed(key: string): Promise<boolean> {
-    const [existing] = await db.select()
+    const searchPattern = `%Key: %${key}%`;
+    const existing = await db.select()
       .from(transactions)
-      .where(eq(transactions.details, `Key: ${key}`));
-    return !!existing;
+      .where(and(
+        eq(transactions.type, "earning"),
+        sql`${transactions.details} LIKE ${searchPattern}`
+      ));
+    return existing.length > 0;
   }
 }
+
+import { sql } from "drizzle-orm";
 
 export const storage = new DatabaseStorage();
