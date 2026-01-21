@@ -97,6 +97,51 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+  },
+  admin: {
+    login: {
+      method: 'POST' as const,
+      path: '/api/admin/login',
+      input: z.object({ password: z.string() }),
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        401: z.object({ message: z.string() }),
+      },
+    },
+    users: {
+      method: 'GET' as const,
+      path: '/api/admin/users',
+      responses: {
+        200: z.array(z.custom<typeof users.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    toggleBlock: {
+      method: 'POST' as const,
+      path: '/api/admin/users/:id/toggle-block',
+      input: z.object({ isBlocked: z.boolean() }),
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    withdrawals: {
+      method: 'GET' as const,
+      path: '/api/admin/withdrawals',
+      responses: {
+        200: z.array(z.custom<typeof transactions.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updateWithdrawal: {
+      method: 'POST' as const,
+      path: '/api/admin/withdrawals/:id/status',
+      input: z.object({ status: z.enum(['completed', 'rejected', 'pending']) }),
+      responses: {
+        200: z.custom<typeof transactions.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+      },
+    },
   }
 };
 

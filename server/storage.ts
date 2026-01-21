@@ -8,9 +8,12 @@ export interface IStorage {
   getUserByGuestId(guestId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: number, amount: number): Promise<User>;
+  setUserBlockedStatus(userId: number, isBlocked: boolean): Promise<User>;
+  getAllUsers(): Promise<User[]>;
   
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined>;
+  getAllTransactions(): Promise<Transaction[]>;
   getUserTransactions(userId: number): Promise<Transaction[]>;
   isKeyUsed(key: string): Promise<boolean>;
 }
@@ -43,6 +46,19 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
+  async setUserBlockedStatus(userId: number, isBlocked: boolean): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set({ isBlocked })
+      .where(eq(users.id, userId))
+      .returning();
+    if (!updatedUser) throw new Error("User not found");
+    return updatedUser;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {
     const [newTransaction] = await db.insert(transactions).values(transaction).returning();
     return newTransaction;
@@ -54,6 +70,12 @@ export class DatabaseStorage implements IStorage {
       .where(eq(transactions.id, id))
       .returning();
     return updated;
+  }
+
+  async getAllTransactions(): Promise<Transaction[]> {
+    return await db.select()
+      .from(transactions)
+      .orderBy(desc(transactions.createdAt));
   }
 
   async getUserTransactions(userId: number): Promise<Transaction[]> {

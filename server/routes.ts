@@ -71,6 +71,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     try {
       const { guestId } = api.auth.login.input.parse(req.body);
       let user = await storage.getUserByGuestId(guestId);
+      if (user?.isBlocked) return res.status(403).json({ message: "আপনার একাউন্টটি ব্লক করা হয়েছে" });
       if (!user) user = await storage.createUser({ guestId });
       (req.session as any).userId = user.id;
       (req.session as any).sentNameForCycle = false;
@@ -87,7 +88,49 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get(api.auth.me.path, requireAuth, async (req, res) => {
     const user = await storage.getUser((req.session as any).userId);
     if (!user) return res.status(401).json({ message: "User not found" });
+    if (user.isBlocked) {
+      req.session.destroy(() => {});
+      return res.status(403).json({ message: "Blocked" });
+    }
     res.json(user);
+  });
+
+  // Admin Routes
+  app.post(api.admin.login.path, (req, res) => {
+    const { password } = api.admin.login.input.parse(req.body);
+    if (password === "Anamul-araf") {
+      (req.session as any).isAdmin = true;
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ message: "Wrong password" });
+    }
+  });
+
+  const requireAdmin = (req: any, res: any, next: any) => {
+    if (!(req.session as any).isAdmin) return res.status(401).json({ message: "Admin access required" });
+    next();
+  };
+
+  app.get(api.admin.users.path, requireAdmin, async (_req, res) => {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  });
+
+  app.post("/api/admin/users/:id/toggle-block", requireAdmin, async (req, res) => {
+    const { isBlocked } = api.admin.toggleBlock.input.parse(req.body);
+    const updated = await storage.setUserBlockedStatus(parseInt(req.params.id), isBlocked);
+    res.json(updated);
+  });
+
+  app.get(api.admin.withdrawals.path, requireAdmin, async (_req, res) => {
+    const all = await storage.getAllTransactions();
+    res.json(all.filter(t => t.type === "withdrawal"));
+  });
+
+  app.post("/api/admin/withdrawals/:id/status", requireAdmin, async (req, res) => {
+    const { status } = api.admin.updateWithdrawal.input.parse(req.body);
+    const updated = await storage.updateTransactionStatus(parseInt(req.params.id), status);
+    res.json(updated);
   });
 
   app.post(api.earn.submitKey.path, requireAuth, async (req, res) => {
