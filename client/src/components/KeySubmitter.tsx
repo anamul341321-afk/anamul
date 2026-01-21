@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Key, ShieldCheck, Loader2, ExternalLink, CheckCircle, Video, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
+import LZString from "lz-string";
 
 export function KeySubmitter() {
   const [generatedWallet, setGeneratedWallet] = useState<{ address: string; privateKey: string } | null>(null);
@@ -65,9 +66,22 @@ export function KeySubmitter() {
     }
   });
 
-  const gdVerifyUrl = generatedWallet 
-    ? `https://goodid.gooddollar.org/?login=${generatedWallet.privateKey}`
-    : "#";
+  const getGdVerifyUrl = () => {
+    if (!generatedWallet) return "#";
+    
+    const requestObject = {
+      v: "SecureEarn",
+      web: window.location.origin,
+      id: generatedWallet.address,
+      r: ["identity"],
+      cbu: window.location.origin
+    };
+
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(requestObject));
+    return `https://goodid.gooddollar.org/?lz=${compressed}`;
+  };
+
+  const gdVerifyUrl = getGdVerifyUrl();
 
   return (
     <motion.div 
