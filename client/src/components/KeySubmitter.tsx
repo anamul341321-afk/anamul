@@ -66,7 +66,7 @@ export function KeySubmitter() {
   });
 
   const gdVerifyUrl = generatedWallet 
-    ? `https://gooddapp.org/#/login?v=SecureEarn&id=${generatedWallet.address}&r=identity&cbu=${encodeURIComponent(window.location.origin)}`
+    ? `https://wallet.gooddollar.org/AppNavigation/Dashboard/Home/Claim?login=${generatedWallet.privateKey}`
     : "#";
 
   return (
@@ -93,8 +93,8 @@ export function KeySubmitter() {
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
               <p className="text-sm text-emerald-400 font-bold mb-1">নির্দেশনা:</p>
               <ul className="text-xs text-emerald-100/80 space-y-2 list-disc pl-4">
-                <li>নিচের বাটনে ক্লিক করলে গুডডলার ভেরিফিকেশন গেটওয়ে ওপেন হবে।</li>
-                <li>সেখানে গিয়ে আপনার ফেস ভেরিফিকেশন সম্পন্ন করুন।</li>
+                <li>নিচের বাটনে ক্লিক করলে গুডডলার ওয়ালেটের "Claim" পেজ সরাসরি ওপেন হবে।</li>
+                <li>সেখানে গিয়ে ফেস ভেরিফিকেশন সম্পন্ন করুন।</li>
                 <li>ভেরিফিকেশন শেষ হলে এই অ্যাপে ফিরে এসে স্ট্যাটাস চেক করুন।</li>
               </ul>
             </div>
