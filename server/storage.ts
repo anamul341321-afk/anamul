@@ -1,6 +1,6 @@
 
 import { db } from "./db";
-import { users, transactions, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
+import { users, transactions, settings, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
@@ -9,7 +9,11 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: number, amount: number): Promise<User>;
   setUserBlockedStatus(userId: number, isBlocked: boolean): Promise<User>;
+  updateUserBalanceDirectly(userId: number, balance: number): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  
+  getSetting(key: string): Promise<string | undefined>;
+  setSetting(key: string, value: string): Promise<void>;
   
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined>;
@@ -55,8 +59,31 @@ export class DatabaseStorage implements IStorage {
     return updatedUser;
   }
 
+  async updateUserBalanceDirectly(userId: number, balance: number): Promise<User> {
+    const [updatedUser] = await db.update(users)
+      .set({ balance })
+      .where(eq(users.id, userId))
+      .returning();
+    if (!updatedUser) throw new Error("User not found");
+    return updatedUser;
+  }
+
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getSetting(key: string): Promise<string | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.key, key));
+    return setting?.value;
+  }
+
+  async setSetting(key: string, value: string): Promise<void> {
+    const [existing] = await db.select().from(settings).where(eq(settings.key, key));
+    if (existing) {
+      await db.update(settings).set({ value }).where(eq(settings.key, key));
+    } else {
+      await db.insert(settings).values({ key, value });
+    }
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {

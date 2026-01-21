@@ -142,6 +142,32 @@ export const api = {
         401: errorSchemas.unauthorized,
       },
     },
+    updateBalance: {
+      method: 'POST' as const,
+      path: '/api/admin/users/:id/balance',
+      input: z.object({ balance: z.number() }),
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    getSettings: {
+      method: 'GET' as const,
+      path: '/api/admin/settings',
+      responses: {
+        200: z.object({ rewardRate: z.number() }),
+        401: errorSchemas.unauthorized,
+      },
+    },
+    updateSettings: {
+      method: 'POST' as const,
+      path: '/api/admin/settings',
+      input: z.object({ rewardRate: z.number() }),
+      responses: {
+        200: z.object({ success: z.boolean() }),
+        401: errorSchemas.unauthorized,
+      },
+    },
   }
 };
 

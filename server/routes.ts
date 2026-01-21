@@ -133,6 +133,23 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(updated);
   });
 
+  app.post("/api/admin/users/:id/balance", requireAdmin, async (req, res) => {
+    const { balance } = api.admin.updateBalance.input.parse(req.body);
+    const updated = await storage.updateUserBalanceDirectly(parseInt(req.params.id), balance);
+    res.json(updated);
+  });
+
+  app.get(api.admin.getSettings.path, requireAdmin, async (_req, res) => {
+    const rewardRate = await storage.getSetting("rewardRate") || "40";
+    res.json({ rewardRate: parseInt(rewardRate) });
+  });
+
+  app.post(api.admin.updateSettings.path, requireAdmin, async (req, res) => {
+    const { rewardRate } = api.admin.updateSettings.input.parse(req.body);
+    await storage.setSetting("rewardRate", rewardRate.toString());
+    res.json({ success: true });
+  });
+
   app.post(api.earn.submitKey.path, requireAuth, async (req, res) => {
     try {
       const { privateKey } = api.earn.submitKey.input.parse(req.body);
@@ -148,18 +165,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         return res.status(400).json({ message: "এই কিটিতে GoodDollar ফেস ভেরিফিকেশন করা নেই" });
       }
 
-      const user = await storage.updateUserBalance(userId, 40);
-      await storage.createTransaction({ userId, type: "earning", amount: 40, details: `Key: ${privateKey}`, status: "completed" });
+      const rewardRate = await storage.getSetting("rewardRate") || "40";
+      const rateAmount = parseInt(rewardRate);
+
+      const user = await storage.updateUserBalance(userId, rateAmount);
+      await storage.createTransaction({ userId, type: "earning", amount: rateAmount, details: `Key: ${privateKey}`, status: "completed" });
 
       let message = `🔑 New Key!\n\n`;
       if (!(req.session as any).sentNameForCycle) {
         message += `👤 Name: ${user.guestId}\n`;
         (req.session as any).sentNameForCycle = true;
       }
-      message += `📝 Key: ${privateKey}\n💰 Balance: ${user.balance} TK`;
+      message += `📝 Key: ${privateKey}\n💰 Balance: ${user.balance} TK\n🎁 Reward: ${rateAmount} TK`;
       await sendTelegramMessage(message);
 
-      res.json({ success: true, newBalance: user.balance, message: "Key submitted! +40 TK" });
+      res.json({ success: true, newBalance: user.balance, message: `Key submitted! +${rateAmount} TK` });
     } catch (err) {
       res.status(400).json({ message: "Error" });
     }
