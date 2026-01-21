@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -36,8 +36,13 @@ export default function AdminPanel() {
   const { data: settingsData } = useQuery<any>({
     queryKey: [api.admin.getSettings.path],
     enabled: isLoggedIn,
-    onSuccess: (data) => setRewardRate(data.rewardRate.toString()),
   });
+
+  useEffect(() => {
+    if (settingsData?.rewardRate) {
+      setRewardRate(settingsData.rewardRate.toString());
+    }
+  }, [settingsData]);
 
   const blockMutation = useMutation({
     mutationFn: async ({ id, isBlocked }: { id: number; isBlocked: boolean }) => {
