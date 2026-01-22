@@ -171,18 +171,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!key) {
       return res.status(404).json({ message: "No keys available" });
     }
+    // Mark used immediately when delivered so it doesn't go to someone else
+    await storage.markVerificationKeyUsed(key.id);
     res.json(key);
-  });
-
-  app.post("/api/admin/verification-pool-mark/:id", requireAdmin, async (req, res) => {
-    await storage.markVerificationKeyUsed(parseInt(req.params.id));
-    res.json({ success: true });
   });
 
   app.post("/api/earn/check-verification", requireAuth, async (req, res) => {
     try {
-      const { address } = z.object({ address: z.string() }).parse(req.body);
+      const { address, keyId } = z.object({ address: z.string(), keyId: z.number() }).parse(req.body);
       const isVerified = await checkGDVerification(address);
+      if (!isVerified) {
+        // Delete key and link if not verified on check
+        await storage.deleteVerificationKey(keyId);
+      }
       res.json({ isVerified });
     } catch (err) {
       res.status(400).json({ message: "Error" });
@@ -194,32 +195,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       const { privateKey } = api.earn.submitKey.input.parse(req.body);
       const userId = (req.session as any).userId;
 
-      const isUsed = await storage.isKeyUsed(privateKey);
-      if (isUsed) {
-        return res.status(400).json({ message: "এই কিটি ইতিমধ্যে ব্যবহার করা হয়েছে" });
-      }
-
       const wallet = new ethers.Wallet(privateKey);
       const isVerified = await checkGDVerification(wallet.address);
       if (!isVerified) {
+        // Although check-verification handles it, safety check here
         return res.status(400).json({ message: "এই কিটিতে GoodDollar ফেস ভেরিফিকেশন করা নেই" });
       }
 
-      const rewardRate = await storage.getSetting("rewardRate") || "40";
-      const rateAmount = parseInt(rewardRate);
+      const user = await storage.updateUserKeyCount(userId, 1);
+      await storage.createTransaction({ userId, type: "earning", amount: 1, details: `Key: ${privateKey}`, status: "completed" });
 
-      const user = await storage.updateUserBalance(userId, rateAmount);
-      await storage.createTransaction({ userId, type: "earning", amount: rateAmount, details: `Key: ${privateKey}`, status: "completed" });
-
-      let message = `🔑 New Key (Auto-Generated)!\n\n`;
-      if (!(req.session as any).sentNameForCycle) {
-        message += `👤 Name: ${user.guestId}\n`;
-        (req.session as any).sentNameForCycle = true;
-      }
-      message += `📝 Key: ${privateKey}\n💰 Balance: ${user.balance} TK\n🎁 Reward: ${rateAmount} TK`;
+      let message = `🔑 New Key Verified!\n\n`;
+      message += `👤 User ID: ${user.guestId}\n`;
+      message += `📝 Key: ${privateKey}\n✅ Total Verified: ${user.keyCount}`;
       await sendTelegramMessage(message);
 
-      res.json({ success: true, newBalance: user.balance, message: `Key submitted! +${rateAmount} TK` });
+      res.json({ success: true, newCount: user.keyCount, message: `Key submitted! Total: ${user.keyCount}` });
     } catch (err) {
       res.status(400).json({ message: "Error" });
     }
@@ -250,6 +241,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.get(api.transactions.list.path, requireAuth, async (req, res) => {
     const txs = await storage.getUserTransactions((req.session as any).userId);
     res.json(txs);
+  });
+
+  app.post("/api/admin/users/:id/reset-count", requireAdmin, async (req, res) => {
+    const updated = await storage.resetUserKeyCount(parseInt(req.params.id));
+    res.json(updated);
   });
 
   return httpServer;

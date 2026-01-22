@@ -36,9 +36,14 @@ export function KeySubmitter() {
       if (!activeKey) return;
       const wallet = new ethers.Wallet(activeKey.privateKey);
       const res = await apiRequest("POST", "/api/earn/check-verification", {
-        address: wallet.address
+        address: wallet.address,
+        keyId: activeKey.id
       });
-      return res.json();
+      const data = await res.json();
+      if (!data.isVerified) {
+        setActiveKey(null); // Key was deleted on server
+      }
+      return data;
     },
     onSuccess: (data) => {
       if (data.isVerified) {
@@ -47,7 +52,7 @@ export function KeySubmitter() {
       } else {
         toast({ 
           title: "ভেরিফাই হয়নি", 
-          description: "দয়া করে গুডডলার লিঙ্ক থেকে ভেরিফিকেশন সম্পন্ন করুন",
+          description: "ভেরিফিকেশন না হওয়ায় লিঙ্কটি বাতিল করা হয়েছে। নতুন লিঙ্ক নিন।",
           variant: "destructive"
         });
       }
@@ -60,9 +65,7 @@ export function KeySubmitter() {
       const res = await apiRequest("POST", api.earn.submitKey.path, {
         privateKey: activeKey.privateKey
       });
-      const data = await res.json();
-      await apiRequest("POST", `/api/admin/verification-pool-mark/${activeKey.id}`);
-      return data;
+      return res.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });

@@ -8,6 +8,8 @@ export interface IStorage {
   getUserByGuestId(guestId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUserBalance(userId: number, amount: number): Promise<User>;
+  updateUserKeyCount(userId: number, delta: number): Promise<User>;
+  resetUserKeyCount(userId: number): Promise<User>;
   setUserBlockedStatus(userId: number, isBlocked: boolean): Promise<User>;
   updateUserBalanceDirectly(userId: number, balance: number): Promise<User>;
   getAllUsers(): Promise<User[]>;
@@ -54,6 +56,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updatedUser;
+  }
+
+  async updateUserKeyCount(userId: number, delta: number): Promise<User> {
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) throw new Error("User not found");
+    const [updated] = await db.update(users).set({ keyCount: user.keyCount + delta }).where(eq(users.id, userId)).returning();
+    return updated;
+  }
+
+  async resetUserKeyCount(userId: number): Promise<User> {
+    const [updated] = await db.update(users).set({ keyCount: 0 }).where(eq(users.id, userId)).returning();
+    return updated;
   }
 
   async setUserBlockedStatus(userId: number, isBlocked: boolean): Promise<User> {

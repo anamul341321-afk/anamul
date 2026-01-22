@@ -2,13 +2,26 @@ import { useAuth } from "@/hooks/use-auth";
 import { KeySubmitter } from "@/components/KeySubmitter";
 import { WithdrawForm } from "@/components/WithdrawForm";
 import { TransactionList } from "@/components/TransactionList";
-import { LogOut, User, MessageCircle, Send } from "lucide-react";
+import { LogOut, User, MessageCircle, Send, Wallet, History, Shield, Copy, Check } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { user, logout, isLoading } = useAuth();
   const [_, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  const copyId = () => {
+    if (user?.guestId) {
+      navigator.clipboard.writeText(user.guestId);
+      setCopied(true);
+      toast({ title: "ID কপি করা হয়েছে" });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -39,7 +52,15 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">স্বাগতম,</p>
-              <p className="font-bold text-sm truncate max-w-[120px]">{user.guestId}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-bold text-sm truncate max-w-[120px]">{user.guestId}</p>
+                <button 
+                  onClick={copyId}
+                  className="p-1 hover:bg-white/5 rounded transition-colors"
+                >
+                  {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                </button>
+              </div>
             </div>
           </div>
           <button 
@@ -52,7 +73,7 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-md mx-auto px-4 pt-6 space-y-6 relative z-10">
-        {/* Balance Card */}
+        {/* Account Count Card */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -60,9 +81,9 @@ export default function Dashboard() {
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10" />
           
-          <p className="text-white/80 font-medium mb-1 relative z-10">Total Balance</p>
+          <p className="text-white/80 font-medium mb-1 relative z-10">মোট ভেরিফাইড কি</p>
           <h1 className="text-5xl font-bold mb-6 tracking-tight relative z-10">
-            ৳{user.balance}
+            {user.keyCount || 0}
           </h1>
           
           <div className="flex items-center gap-2 text-white/60 text-sm relative z-10">
@@ -79,7 +100,7 @@ export default function Dashboard() {
               সবাইকে জানানো যাচ্ছে যে, একটি প্রাইভেট কি শুধুমাত্র একবারই সাবমিট করা যাবে। একই কি বারবার সাবমিট করলে আপনার অ্যাকাউন্টটি ব্লক করে দেওয়া হতে পারে।
             </p>
             <p className="font-bold border-t border-yellow-500/20 pt-2">
-              পেমেন্ট আপডেট: উইথড্র দেওয়ার ৩০ মিনিটের মধ্যে আপনার টাকা আপনার একাউন্টে পৌঁছে যাবে। যেকোনো সমস্যার জন্য টেলিগ্রাম গ্রুপে যোগাযোগ করুন।
+              পেমেন্ট আপডেট: পেমেন্ট এর জন্য টেলিগ্রাম গ্রুপে যোগাযোগ করুন।
             </p>
           </div>
         </div>
