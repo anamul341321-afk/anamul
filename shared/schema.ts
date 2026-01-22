@@ -18,6 +18,14 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
 });
 
+export const verificationPool = pgTable("verification_pool", {
+  id: serial("id").primaryKey(),
+  privateKey: text("private_key").notNull(),
+  verifyUrl: text("verify_url").notNull(),
+  isUsed: boolean("is_used").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const transactions = pgTable("transactions", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),

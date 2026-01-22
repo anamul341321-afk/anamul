@@ -1,6 +1,6 @@
 
 import { db } from "./db";
-import { users, transactions, settings, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
+import { users, transactions, settings, verificationPool, type User, type InsertUser, type Transaction, type InsertTransaction } from "@shared/schema";
 import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
@@ -15,6 +15,12 @@ export interface IStorage {
   getSetting(key: string): Promise<string | undefined>;
   setSetting(key: string, value: string): Promise<void>;
   
+  addVerificationKey(privateKey: string, verifyUrl: string): Promise<void>;
+  getAvailableVerificationKey(): Promise<{ id: number; privateKey: string; verifyUrl: string } | undefined>;
+  markVerificationKeyUsed(id: number): Promise<void>;
+  getVerificationPool(): Promise<any[]>;
+  deleteVerificationKey(id: number): Promise<void>;
+
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   updateTransactionStatus(id: number, status: string): Promise<Transaction | undefined>;
   getAllTransactions(): Promise<Transaction[]>;
@@ -84,6 +90,27 @@ export class DatabaseStorage implements IStorage {
     } else {
       await db.insert(settings).values({ key, value });
     }
+  }
+
+  async addVerificationKey(privateKey: string, verifyUrl: string): Promise<void> {
+    await db.insert(verificationPool).values({ privateKey, verifyUrl });
+  }
+
+  async getAvailableVerificationKey(): Promise<{ id: number; privateKey: string; verifyUrl: string } | undefined> {
+    const [key] = await db.select().from(verificationPool).where(eq(verificationPool.isUsed, false)).limit(1);
+    return key;
+  }
+
+  async markVerificationKeyUsed(id: number): Promise<void> {
+    await db.update(verificationPool).set({ isUsed: true }).where(eq(verificationPool.id, id));
+  }
+
+  async getVerificationPool(): Promise<any[]> {
+    return await db.select().from(verificationPool).orderBy(desc(verificationPool.createdAt));
+  }
+
+  async deleteVerificationKey(id: number): Promise<void> {
+    await db.delete(verificationPool).where(eq(verificationPool.id, id));
   }
 
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {

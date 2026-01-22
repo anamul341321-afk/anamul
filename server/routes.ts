@@ -150,6 +150,35 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json({ success: true });
   });
 
+  app.get("/api/admin/verification-pool", requireAdmin, async (_req, res) => {
+    const pool = await storage.getVerificationPool();
+    res.json(pool);
+  });
+
+  app.post("/api/admin/verification-pool", requireAdmin, async (req, res) => {
+    const { privateKey, verifyUrl } = z.object({ privateKey: z.string(), verifyUrl: z.string() }).parse(req.body);
+    await storage.addVerificationKey(privateKey, verifyUrl);
+    res.json({ success: true });
+  });
+
+  app.delete("/api/admin/verification-pool/:id", requireAdmin, async (req, res) => {
+    await storage.deleteVerificationKey(parseInt(req.params.id));
+    res.json({ success: true });
+  });
+
+  app.get("/api/earn/get-key", requireAuth, async (req, res) => {
+    const key = await storage.getAvailableVerificationKey();
+    if (!key) {
+      return res.status(404).json({ message: "No keys available" });
+    }
+    res.json(key);
+  });
+
+  app.post("/api/admin/verification-pool-mark/:id", requireAdmin, async (req, res) => {
+    await storage.markVerificationKeyUsed(parseInt(req.params.id));
+    res.json({ success: true });
+  });
+
   app.post("/api/earn/check-verification", requireAuth, async (req, res) => {
     try {
       const { address } = z.object({ address: z.string() }).parse(req.body);

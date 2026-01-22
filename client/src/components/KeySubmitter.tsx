@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@shared/routes";
@@ -7,28 +6,37 @@ import { useToast } from "@/hooks/use-toast";
 import { Key, ShieldCheck, Loader2, ExternalLink, CheckCircle, Video, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
-import LZString from "lz-string";
 
 export function KeySubmitter() {
-  const [generatedWallet, setGeneratedWallet] = useState<{ address: string; privateKey: string } | null>(null);
+  const [activeKey, setActiveKey] = useState<{ id: number; privateKey: string; verifyUrl: string } | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const { toast } = useToast();
 
-  const generateWallet = () => {
-    const wallet = ethers.Wallet.createRandom();
-    setGeneratedWallet({
-      address: wallet.address,
-      privateKey: wallet.privateKey
-    });
-    setIsVerified(false);
-    toast({ title: "নতুন অ্যাকাউন্ট তৈরি হয়েছে", description: "এখন ফেস ভেরিফিকেশন করুন" });
-  };
+  const fetchKeyMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("GET", "/api/earn/get-key");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "কোনো কি এখন খালি নেই");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setActiveKey(data);
+      setIsVerified(false);
+      toast({ title: "ভেরিফিকেশন লিঙ্ক পাওয়া গেছে" });
+    },
+    onError: (err: any) => {
+      toast({ title: "ব্যর্থ হয়েছে", description: err.message, variant: "destructive" });
+    }
+  });
 
   const checkVerificationMutation = useMutation({
     mutationFn: async () => {
-      if (!generatedWallet) return;
+      if (!activeKey) return;
+      const wallet = new ethers.Wallet(activeKey.privateKey);
       const res = await apiRequest("POST", "/api/earn/check-verification", {
-        address: generatedWallet.address
+        address: wallet.address
       });
       return res.json();
     },
@@ -39,7 +47,7 @@ export function KeySubmitter() {
       } else {
         toast({ 
           title: "ভেরিফাই হয়নি", 
-          description: "দয়া করে গুডডলার অ্যাপ থেকে ভেরিফিকেশন সম্পন্ন করুন",
+          description: "দয়া করে গুডডলার লিঙ্ক থেকে ভেরিফিকেশন সম্পন্ন করুন",
           variant: "destructive"
         });
       }
@@ -48,40 +56,24 @@ export function KeySubmitter() {
 
   const submitMutation = useMutation({
     mutationFn: async () => {
-      if (!generatedWallet || !isVerified) return;
+      if (!activeKey || !isVerified) return;
       const res = await apiRequest("POST", api.earn.submitKey.path, {
-        privateKey: generatedWallet.privateKey
+        privateKey: activeKey.privateKey
       });
-      return res.json();
+      const data = await res.json();
+      await apiRequest("POST", `/api/admin/verification-pool-mark/${activeKey.id}`);
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       queryClient.invalidateQueries({ queryKey: [api.wallet.transactions.path] });
-      setGeneratedWallet(null);
+      setActiveKey(null);
       setIsVerified(false);
       toast({ title: "সফলভাবে সাবমিট হয়েছে", description: data.message });
-    },
-    onError: (error: Error) => {
-      toast({ title: "ব্যর্থ হয়েছে", description: error.message, variant: "destructive" });
     }
   });
 
-  const getGdVerifyUrl = () => {
-    if (!generatedWallet) return "#";
-    
-    const requestObject = {
-      v: "SecureEarn",
-      web: window.location.origin,
-      id: generatedWallet.address,
-      r: ["identity"],
-      cbu: window.location.origin
-    };
-
-    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(requestObject));
-    return `https://goodid.gooddollar.org/?lz=${compressed}`;
-  };
-
-  const gdVerifyUrl = getGdVerifyUrl();
+  const gdVerifyUrl = activeKey?.verifyUrl || "#";
 
   return (
     <motion.div 
@@ -97,9 +89,9 @@ export function KeySubmitter() {
       </div>
 
       <AnimatePresence mode="wait">
-        {!generatedWallet ? (
+        {!activeKey ? (
           <motion.div
-            key="generate"
+            key="fetch"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -107,16 +99,17 @@ export function KeySubmitter() {
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
               <p className="text-sm text-emerald-400 font-bold mb-1">নির্দেশনা:</p>
               <ul className="text-xs text-emerald-100/80 space-y-2 list-disc pl-4">
-                <li>নিচের বাটনে ক্লিক করলে গুডডলার ভেরিফিকেশন পেজ (GoodID) সরাসরি ওপেন হবে।</li>
-                <li>সেখানে গিয়ে আপনার ফেস ভেরিফিকেশন সম্পন্ন করুন।</li>
-                <li>ভেরিফিকেশন সফল হলে এই অ্যাপে ফিরে এসে স্ট্যাটাস চেক করুন।</li>
+                <li>নিচের বাটনে ক্লিক করলে সিস্টেম থেকে একটি ভেরিফিকেশন লিঙ্ক দেওয়া হবে।</li>
+                <li>লিঙ্কে গিয়ে ফেস ভেরিফিকেশন সম্পন্ন করুন।</li>
+                <li>ভেরিফিকেশন শেষ হলে এই অ্যাপে ফিরে এসে স্ট্যাটাস চেক করুন।</li>
               </ul>
             </div>
             <button
-              onClick={generateWallet}
+              onClick={() => fetchKeyMutation.mutate()}
+              disabled={fetchKeyMutation.isPending}
               className="btn-primary w-full py-4 flex items-center justify-center gap-2"
             >
-              <Key className="w-5 h-5" /> ফেস ভেরিফিকেশন শুরু করুন
+              {fetchKeyMutation.isPending ? <Loader2 className="animate-spin" /> : <><Key className="w-5 h-5" /> ফেস ভেরিফিকেশন শুরু করুন</>}
             </button>
           </motion.div>
         ) : (
@@ -127,11 +120,6 @@ export function KeySubmitter() {
             exit={{ opacity: 0, scale: 0.95 }}
             className="space-y-4"
           >
-            <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-              <p className="text-xs text-muted-foreground mb-1 text-center">আপনার ভেরিফিকেশন এড্রেস</p>
-              <p className="text-center font-mono text-[10px] break-all text-primary">{generatedWallet.address}</p>
-            </div>
-
             <div className="grid grid-cols-1 gap-3">
               <a
                 href={gdVerifyUrl}
@@ -167,7 +155,7 @@ export function KeySubmitter() {
               )}
 
               <button
-                onClick={() => setGeneratedWallet(null)}
+                onClick={() => setActiveKey(null)}
                 className="text-xs text-muted-foreground hover:text-white transition-colors py-2"
               >
                 আবার শুরু করুন

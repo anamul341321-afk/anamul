@@ -9,10 +9,38 @@ import { motion } from "framer-motion";
 export default function AdminPanel() {
   const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [editingUserId, setEditingUserId] = useState<number | null>(null);
-  const [newBalance, setNewBalance] = useState("");
-  const [rewardRate, setRewardRate] = useState("");
-  const { toast } = useToast();
+  const [newPrivateKey, setNewPrivateKey] = useState("");
+  const [newVerifyUrl, setNewVerifyUrl] = useState("");
+
+  const { data: pool } = useQuery<any[]>({
+    queryKey: ["/api/admin/verification-pool"],
+    enabled: isLoggedIn,
+  });
+
+  const addPoolMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admin/verification-pool", { 
+        privateKey: newPrivateKey, 
+        verifyUrl: newVerifyUrl 
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/verification-pool"] });
+      setNewPrivateKey("");
+      setNewVerifyUrl("");
+      toast({ title: "কি পুলে যোগ করা হয়েছে" });
+    },
+  });
+
+  const deletePoolMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/admin/verification-pool/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/verification-pool"] });
+      toast({ title: "কি ডিলিট করা হয়েছে" });
+    },
+  });
 
   const loginMutation = useMutation({
     mutationFn: async () => {
@@ -143,6 +171,63 @@ export default function AdminPanel() {
             >
               Update Rate
             </button>
+          </div>
+        </section>
+
+        </section>
+
+        {/* Verification Pool Management */}
+        <section className="glass-card p-6 rounded-2xl">
+          <div className="flex items-center gap-3 mb-4">
+            <Key className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold">ভেরিফিকেশন পুল (Keys & Links)</h2>
+          </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                type="text"
+                placeholder="Private Key..."
+                value={newPrivateKey}
+                onChange={(e) => setNewPrivateKey(e.target.value)}
+                className="input-field"
+              />
+              <input
+                type="text"
+                placeholder="Verification Link (GoodID URL)..."
+                value={newVerifyUrl}
+                onChange={(e) => setNewVerifyUrl(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <button
+              onClick={() => addPoolMutation.mutate()}
+              className="btn-primary w-full"
+              disabled={addPoolMutation.isPending || !newPrivateKey || !newVerifyUrl}
+            >
+              Add to Pool
+            </button>
+          </div>
+
+          <div className="mt-6 space-y-2">
+            {pool?.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex-1 truncate mr-4">
+                  <p className="text-xs font-mono truncate">{item.privateKey}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{item.verifyUrl}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${item.isUsed ? 'bg-destructive/20 text-destructive' : 'bg-primary/20 text-primary'}`}>
+                    {item.isUsed ? 'USED' : 'READY'}
+                  </span>
+                  <button
+                    onClick={() => deletePoolMutation.mutate(item.id)}
+                    className="text-destructive hover:bg-destructive/10 p-1 rounded"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
