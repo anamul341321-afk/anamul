@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ShieldCheck, UserX, UserCheck, CheckCircle, XCircle, Loader2, Coins, Edit3 } from "lucide-react";
+import { ShieldCheck, UserX, UserCheck, CheckCircle, XCircle, Loader2, Coins, Edit3, Key } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function AdminPanel() {
@@ -11,6 +11,10 @@ export default function AdminPanel() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [newPrivateKey, setNewPrivateKey] = useState("");
   const [newVerifyUrl, setNewVerifyUrl] = useState("");
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [newBalance, setNewBalance] = useState("");
+  const [rewardRate, setRewardRate] = useState("");
+  const { toast } = useToast();
 
   const { data: pool } = useQuery<any[]>({
     queryKey: ["/api/admin/verification-pool"],
@@ -45,10 +49,16 @@ export default function AdminPanel() {
   const loginMutation = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", api.admin.login.path, { password });
+      if (!res.ok) throw new Error("ভুল পাসওয়ার্ড");
       return res.json();
     },
-    onSuccess: () => setIsLoggedIn(true),
-    onError: () => toast({ title: "ভুল পাসওয়ার্ড", variant: "destructive" }),
+    onSuccess: () => {
+      setIsLoggedIn(true);
+      toast({ title: "সফলভাবে লগইন করা হয়েছে" });
+    },
+    onError: (err: any) => {
+      toast({ title: err.message, variant: "destructive" });
+    },
   });
 
   const { data: users } = useQuery<any[]>({
@@ -123,6 +133,11 @@ export default function AdminPanel() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                loginMutation.mutate();
+              }
+            }}
             placeholder="Password..."
             className="input-field mb-4"
           />
