@@ -174,8 +174,6 @@ export default function AdminPanel() {
           </div>
         </section>
 
-        </section>
-
         {/* Verification Pool Management */}
         <section className="glass-card p-6 rounded-2xl">
           <div className="flex items-center gap-3 mb-4">
