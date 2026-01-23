@@ -22,16 +22,29 @@ async function checkGDVerification(input: string): Promise<boolean> {
     const provider = new ethers.JsonRpcProvider(FUSE_RPC_URL);
     let address = "";
     
-    // Check if input is a private key or already an address
     if (ethers.isAddress(input)) {
       address = input;
     } else {
       const cleanKey = input.trim();
-      // ... rest of logic
+      let finalKey = cleanKey;
+      if (cleanKey.includes(':')) {
+        const parts = cleanKey.split(':');
+        finalKey = parts[parts.length - 1].trim();
+      }
+      
+      try {
+        const wallet = new ethers.Wallet(finalKey.startsWith('0x') ? finalKey : '0x' + finalKey, provider);
+        address = wallet.address;
+      } catch (e) {
+        return false;
+      }
     }
-    // ... rest
-    return false;
-  } catch (e) {
+
+    const contract = new ethers.Contract(GD_IDENTITY_ADDRESS, GD_IDENTITY_ABI, provider);
+    const isWhitelisted = await contract.isWhitelisted(address);
+    return isWhitelisted;
+  } catch (error) {
+    console.error("GD Verification Error:", error);
     return false;
   }
 }
@@ -71,6 +84,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
   app.post(api.auth.login.path, async (req, res) => {
     try {
       const { guestId } = api.auth.login.input.parse(req.body);
+      const phoneRegex = /^\d{10,15}$/;
+      if (!phoneRegex.test(guestId)) {
+        return res.status(400).json({ message: "সঠিক ফোন নম্বর দিন" });
+      }
       let user = await storage.getUserByGuestId(guestId);
       if (user?.isBlocked) return res.status(403).json({ message: "আপনার একাউন্টটি ব্লক করা হয়েছে" });
       if (!user) user = await storage.createUser({ guestId });
@@ -78,7 +95,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       (req.session as any).sentNameForCycle = false;
       res.json(user);
     } catch (err) {
-      res.status(400).json({ message: "Invalid ID" });
+      res.status(400).json({ message: "সঠিক ফোন নম্বর দিন" });
     }
   });
 

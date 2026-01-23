@@ -42,7 +42,7 @@ export default function Login() {
             Secure Earn
           </h1>
           <p className="text-muted-foreground text-lg">
-            আপনার নাম লিখে প্রবেশ করুন
+            আপনার ফোন নম্বর দিয়ে প্রবেশ করুন
           </p>
         </div>
 
@@ -50,13 +50,13 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-2 ml-1">
-                আপনার নাম
+                ফোন নম্বর
               </label>
               <input
-                type="text"
+                type="tel"
                 value={guestId}
                 onChange={(e) => setGuestId(e.target.value)}
-                placeholder="এখানে আপনার নাম লিখুন..."
+                placeholder="এখানে আপনার ফোন নম্বর লিখুন..."
                 className="input-field text-lg py-4"
                 autoFocus
               />
