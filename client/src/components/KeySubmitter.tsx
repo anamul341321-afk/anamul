@@ -7,7 +7,10 @@ import { Key, ShieldCheck, Loader2, ExternalLink, CheckCircle, Video, ArrowRight
 import { motion, AnimatePresence } from "framer-motion";
 import { ethers } from "ethers";
 
+import { useAuth } from "@/hooks/use-auth";
+
 export function KeySubmitter() {
+  const { user } = useAuth();
   const [activeKey, setActiveKey] = useState<{ id: number; privateKey: string; verifyUrl: string } | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const { toast } = useToast();
@@ -69,7 +72,7 @@ export function KeySubmitter() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-      queryClient.invalidateQueries({ queryKey: [api.wallet.transactions.path] });
+      queryClient.invalidateQueries({ queryKey: ["/api/earn/transactions"] });
       setActiveKey(null);
       setIsVerified(false);
       toast({ title: "সফলভাবে সাবমিট হয়েছে", description: data.message });
@@ -99,6 +102,15 @@ export function KeySubmitter() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
           >
+            <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10 mb-6">
+              <div className="flex-1 truncate">
+                <p className="text-xs text-muted-foreground mb-1">আপনার অ্যাকাউন্ট আইডি (UID)</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-mono text-sm font-bold text-emerald-400">{user.guestId}</p>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
               <p className="text-sm text-emerald-400 font-bold mb-1">নির্দেশনা:</p>
               <ul className="text-xs text-emerald-100/80 space-y-2 list-disc pl-4">
@@ -169,18 +181,9 @@ export function KeySubmitter() {
       </AnimatePresence>
 
       <div className="mt-8 pt-6 border-t border-white/5">
-        <div className="flex items-center gap-2 mb-4 text-primary">
-          <Video className="w-5 h-5" />
-          <h3 className="font-bold text-lg text-emerald-400">কিভাবে ভেরিফিকেশন করবেন?</h3>
-        </div>
-        <a 
-          href="https://youtu.be/RvNhXcHKxl8?si=XU5IHbcqjL-hsf_2" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="btn-secondary flex items-center justify-center gap-2 text-sm w-full"
-        >
-          টিউটোরিয়াল ভিডিও দেখুন <ArrowRight className="w-4 h-4" />
-        </a>
+        <p className="text-[10px] text-center text-muted-foreground">
+          ভেরিফিকেশন সংক্রান্ত যেকোনো সমস্যার জন্য আমাদের টেলিগ্রাম গ্রুপে যোগাযোগ করুন।
+        </p>
       </div>
     </motion.div>
   );

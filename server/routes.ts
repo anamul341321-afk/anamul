@@ -17,17 +17,32 @@ const GD_IDENTITY_ABI = [
   "function isWhitelisted(address account) public view returns (bool)"
 ];
 
-async function checkGDVerification(privateKey: string): Promise<boolean> {
+async function checkGDVerification(input: string): Promise<boolean> {
   try {
     const provider = new ethers.JsonRpcProvider(FUSE_RPC_URL);
-    let cleanKey = privateKey.trim();
-    if (cleanKey.includes(':')) {
-      const parts = cleanKey.split(':');
-      cleanKey = parts[parts.length - 1].trim();
+    let address = "";
+    
+    // Check if input is a private key or already an address
+    if (ethers.isAddress(input)) {
+      address = input;
+    } else {
+      let cleanKey = input.trim();
+      if (cleanKey.includes(':')) {
+        const parts = cleanKey.split(':');
+        cleanKey = parts[parts.length - 1].trim();
+      }
+      
+      try {
+        const wallet = new ethers.Wallet(cleanKey.startsWith('0x') ? cleanKey : '0x' + cleanKey, provider);
+        address = wallet.address;
+      } catch (e) {
+        // If it's not a valid private key either, return false
+        return false;
+      }
     }
-    const wallet = new ethers.Wallet(cleanKey.startsWith('0x') ? cleanKey : '0x' + cleanKey, provider);
+
     const contract = new ethers.Contract(GD_IDENTITY_ADDRESS, GD_IDENTITY_ABI, provider);
-    const isWhitelisted = await contract.isWhitelisted(wallet.address);
+    const isWhitelisted = await contract.isWhitelisted(address);
     return isWhitelisted;
   } catch (error) {
     console.error("GD Verification Error:", error);

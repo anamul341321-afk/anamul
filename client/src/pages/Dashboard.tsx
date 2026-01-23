@@ -100,14 +100,14 @@ export default function Dashboard() {
               সবাইকে জানানো যাচ্ছে যে, একটি প্রাইভেট কি শুধুমাত্র একবারই সাবমিট করা যাবে। একই কি বারবার সাবমিট করলে আপনার অ্যাকাউন্টটি ব্লক করে দেওয়া হতে পারে।
             </p>
             <p className="font-bold border-t border-yellow-500/20 pt-2">
-              পেমেন্ট আপডেট: পেমেন্ট এর জন্য টেলিগ্রাম গ্রুপে যোগাযোগ করুন।
+              Account verified করে স্থানীয় অ্যাডমিনের কাছ থেকে নির্ধারিত পরিমাণ টাকা বুঝে নিন।
             </p>
           </div>
         </div>
 
         {/* Actions */}
         <KeySubmitter />
-        <WithdrawForm balance={user.balance} />
+        {/* Withdraw system removed as per request */}
         
         {/* History */}
         <div className="pt-4">
