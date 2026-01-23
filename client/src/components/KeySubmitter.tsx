@@ -106,7 +106,7 @@ export function KeySubmitter() {
               <div className="flex-1 truncate">
                 <p className="text-xs text-muted-foreground mb-1">আপনার অ্যাকাউন্ট আইডি (UID)</p>
                 <div className="flex items-center gap-2">
-                  <p className="font-mono text-sm font-bold text-emerald-400">{user.guestId}</p>
+                  <p className="font-mono text-sm font-bold text-emerald-400">{user?.guestId}</p>
                 </div>
               </div>
             </div>

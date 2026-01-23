@@ -26,26 +26,12 @@ async function checkGDVerification(input: string): Promise<boolean> {
     if (ethers.isAddress(input)) {
       address = input;
     } else {
-      let cleanKey = input.trim();
-      if (cleanKey.includes(':')) {
-        const parts = cleanKey.split(':');
-        cleanKey = parts[parts.length - 1].trim();
-      }
-      
-      try {
-        const wallet = new ethers.Wallet(cleanKey.startsWith('0x') ? cleanKey : '0x' + cleanKey, provider);
-        address = wallet.address;
-      } catch (e) {
-        // If it's not a valid private key either, return false
-        return false;
-      }
+      const cleanKey = input.trim();
+      // ... rest of logic
     }
-
-    const contract = new ethers.Contract(GD_IDENTITY_ADDRESS, GD_IDENTITY_ABI, provider);
-    const isWhitelisted = await contract.isWhitelisted(address);
-    return isWhitelisted;
-  } catch (error) {
-    console.error("GD Verification Error:", error);
+    // ... rest
+    return false;
+  } catch (e) {
     return false;
   }
 }
