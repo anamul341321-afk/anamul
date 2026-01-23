@@ -83,19 +83,19 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post(api.auth.login.path, async (req, res) => {
     try {
-      const { guestId } = api.auth.login.input.parse(req.body);
+      const { guestId, displayName } = api.auth.login.input.parse(req.body);
       const phoneRegex = /^\d{10,15}$/;
       if (!phoneRegex.test(guestId)) {
         return res.status(400).json({ message: "সঠিক ফোন নম্বর দিন" });
       }
       let user = await storage.getUserByGuestId(guestId);
       if (user?.isBlocked) return res.status(403).json({ message: "আপনার একাউন্টটি ব্লক করা হয়েছে" });
-      if (!user) user = await storage.createUser({ guestId });
+      if (!user) user = await storage.createUser({ guestId, displayName });
       (req.session as any).userId = user.id;
       (req.session as any).sentNameForCycle = false;
       res.json(user);
     } catch (err) {
-      res.status(400).json({ message: "সঠিক ফোন নম্বর দিন" });
+      res.status(400).json({ message: "সঠিক তথ্য দিন" });
     }
   });
 

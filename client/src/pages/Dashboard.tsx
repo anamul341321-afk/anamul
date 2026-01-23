@@ -52,14 +52,17 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">স্বাগতম,</p>
-              <div className="flex items-center gap-2">
-                <p className="font-bold text-sm truncate max-w-[120px]">{user.guestId}</p>
-                <button 
-                  onClick={copyId}
-                  className="p-1 hover:bg-white/5 rounded transition-colors"
-                >
-                  {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
-                </button>
+              <div className="flex flex-col">
+                <p className="font-bold text-sm truncate max-w-[120px]">{user.displayName || user.guestId}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground font-mono">ID: {user.guestId}</p>
+                  <button 
+                    onClick={copyId}
+                    className="p-1 hover:bg-white/5 rounded transition-colors"
+                  >
+                    {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

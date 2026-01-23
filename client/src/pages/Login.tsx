@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 
 export default function Login() {
   const [guestId, setGuestId] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const { login, isLoggingIn, isAuthenticated } = useAuth();
   const [_, setLocation] = useLocation();
 
@@ -16,8 +17,8 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!guestId.trim()) return;
-    login({ guestId });
+    if (!guestId.trim() || !displayName.trim()) return;
+    login({ guestId, displayName });
   };
 
   return (
@@ -42,7 +43,7 @@ export default function Login() {
             Secure Earn
           </h1>
           <p className="text-muted-foreground text-lg">
-            আপনার ফোন নম্বর দিয়ে প্রবেশ করুন
+            আপনার নাম এবং ফোন নম্বর দিয়ে প্রবেশ করুন
           </p>
         </div>
 
@@ -50,7 +51,18 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-muted-foreground mb-2 ml-1">
-                ফোন নম্বর
+                আপনার নাম
+              </label>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="এখানে আপনার নাম লিখুন..."
+                className="input-field text-lg py-4 mb-4"
+                autoFocus
+              />
+              <label className="block text-sm font-medium text-muted-foreground mb-2 ml-1">
+                ফোন নম্বর (UID)
               </label>
               <input
                 type="tel"
@@ -58,7 +70,6 @@ export default function Login() {
                 onChange={(e) => setGuestId(e.target.value)}
                 placeholder="এখানে আপনার ফোন নম্বর লিখুন..."
                 className="input-field text-lg py-4"
-                autoFocus
               />
             </div>
 

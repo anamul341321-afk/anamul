@@ -113,11 +113,23 @@ export function KeySubmitter() {
 
             <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6">
               <p className="text-sm text-emerald-400 font-bold mb-1">নির্দেশনা:</p>
-              <ul className="text-xs text-emerald-100/80 space-y-2 list-disc pl-4">
+              <ul className="text-xs text-emerald-100/80 space-y-2 list-disc pl-4 mb-4">
                 <li>নিচের বাটনে ক্লিক করলে সিস্টেম থেকে একটি ভেরিফিকেশন লিঙ্ক দেওয়া হবে।</li>
                 <li>লিঙ্কে গিয়ে ফেস ভেরিফিকেশন সম্পন্ন করুন।</li>
                 <li>ভেরিফিকেশন শেষ হলে এই অ্যাপে ফিরে এসে স্ট্যাটাস চেক করুন।</li>
               </ul>
+              
+              <div className="pt-4 border-t border-emerald-500/20">
+                <p className="text-xs text-emerald-400 font-bold mb-2">কিভাবে ভেরিফিকেশন করবেন ভিডিও দেখুন:</p>
+                <a 
+                  href="https://youtube.com/shorts/xPEM62ZUV_0?feature=share"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition-all"
+                >
+                  <Video className="w-4 h-4" /> ভিডিও দেখুন
+                </a>
+              </div>
             </div>
             <button
               onClick={() => fetchKeyMutation.mutate()}

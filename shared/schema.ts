@@ -6,7 +6,8 @@ import { z } from "zod";
 // === TABLE DEFINITIONS ===
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  guestId: text("guest_id").notNull().unique(),
+  guestId: text("guest_id").notNull().unique(), // This will be the phone number (UID)
+  displayName: text("display_name"), // User's name
   balance: integer("balance").default(0).notNull(),
   keyCount: integer("key_count").default(0).notNull(),
   isBlocked: boolean("is_blocked").default(false).notNull(),
@@ -40,6 +41,7 @@ export const transactions = pgTable("transactions", {
 // === SCHEMAS ===
 export const insertUserSchema = createInsertSchema(users).pick({
   guestId: true,
+  displayName: true,
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
@@ -54,7 +56,7 @@ export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 // === API CONTRACT TYPES ===
-export type LoginRequest = { guestId: string };
+export type LoginRequest = { guestId: string; displayName?: string };
 export type SubmitKeyRequest = { privateKey: string };
 export type WithdrawRequest = { method: "bkash" | "nagad"; number: string; amount: number };
 
