@@ -7,12 +7,19 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 export default function Dashboard() {
   const { user, logout, isLoading } = useAuth();
   const [_, setLocation] = useLocation();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+
+  const { data: settings } = useQuery<{ rewardRate: number }>({
+    queryKey: ["/api/admin/settings"],
+  });
+
+  const rewardRate = settings?.rewardRate || 40;
 
   const copyId = () => {
     if (user?.guestId) {
@@ -84,10 +91,19 @@ export default function Dashboard() {
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl transform translate-x-10 -translate-y-10" />
           
-          <p className="text-white/80 font-medium mb-1 relative z-10">মোট ভেরিফাইড কি</p>
-          <h1 className="text-5xl font-bold mb-6 tracking-tight relative z-10">
-            {user.keyCount || 0}
-          </h1>
+          <div className="flex justify-between items-start mb-4 relative z-10">
+            <div>
+              <p className="text-white/80 font-medium mb-1">মোট ভেরিফাইড কি</p>
+              <h1 className="text-5xl font-bold tracking-tight">
+                {user.keyCount || 0}
+              </h1>
+            </div>
+            <div className="bg-white/20 backdrop-blur-md rounded-2xl p-3 border border-white/20 text-right">
+              <p className="text-[10px] text-white/70 uppercase font-bold mb-1">বর্তমান রেট</p>
+              <p className="text-xl font-black">৳{rewardRate}</p>
+              <p className="text-[10px] text-white/60">প্রতি ভেরিফিকেশন</p>
+            </div>
+          </div>
           
           <div className="flex items-center gap-2 text-white/60 text-sm relative z-10">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
